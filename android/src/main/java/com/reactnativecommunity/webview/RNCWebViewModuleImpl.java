@@ -390,26 +390,25 @@ public class RNCWebViewModuleImpl implements ActivityEventListener {
     }
 
     private Intent getFileChooserIntent(String acceptTypes) {
-        String _acceptTypes = acceptTypes;
-        if (acceptTypes.isEmpty()) {
-            _acceptTypes = MimeType.DEFAULT.value;
-        }
-        if (acceptTypes.matches("\\.\\w+")) {
-            _acceptTypes = getMimeTypeFromExtension(acceptTypes.replace(".", ""));
-        }
-        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-        intent.addCategory(Intent.CATEGORY_OPENABLE);
-        intent.setType(_acceptTypes);
-        return intent;
+   
+        // 갤러리 선택을 위한 ACTION_PICK 인텐트
+        Intent pickIntent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+        pickIntent.setType("image/* video/*");
+
+        
+  
+        return pickIntent;
     }
 
     private Intent getFileChooserIntent(String[] acceptTypes, boolean allowMultiple) {
-        Intent intent = new Intent(Intent.ACTION_GET_CONTENT);
-        intent.addCategory(Intent.CATEGORY_OPENABLE);
-        intent.setType(MimeType.DEFAULT.value);
-        intent.putExtra(Intent.EXTRA_MIME_TYPES, getAcceptedMimeType(acceptTypes));
-        intent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, allowMultiple);
-        return intent;
+        Intent pickIntent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
+        pickIntent.setType("image/* video/*");
+        
+        if (allowMultiple && Build.VERSION.SDK_INT >= Build.VERSION_CODES.JELLY_BEAN_MR2) {
+            pickIntent.putExtra(Intent.EXTRA_ALLOW_MULTIPLE, true);
+        }
+  
+        return pickIntent;
     }
 
     private Boolean acceptsImages(String types) {
