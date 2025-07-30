@@ -404,7 +404,7 @@ public class RNCWebViewModuleImpl implements ActivityEventListener {
         return intent;
       }
       else {
-        // 갤러리 선택을 위한 ACTION_PICK 인텐트
+        // 갤러리 선택을 위한 ACTION_PICK 인텐트 입니다.
         Intent pickIntent = new Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
         pickIntent.setType("image/* video/*");
 
