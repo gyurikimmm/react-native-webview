@@ -75,6 +75,7 @@ shouldStartLoadForRequest:(NSMutableDictionary<NSString *, id> *)request
 @property (nonatomic, assign) BOOL injectedJavaScriptBeforeContentLoadedForMainFrameOnly;
 @property (nonatomic, copy) NSString * _Nullable injectedJavaScriptObject;
 @property (nonatomic, assign) BOOL scrollEnabled;
+@property (nonatomic, assign) BOOL scrollsToTop;
 @property (nonatomic, assign) BOOL sharedCookiesEnabled;
 @property (nonatomic, assign) BOOL autoManageStatusBarEnabled;
 @property (nonatomic, assign) BOOL pagingEnabled;
@@ -147,6 +148,7 @@ shouldStartLoadForRequest:(NSMutableDictionary<NSString *, id> *)request
 - (void)reload;
 - (void)stopLoading;
 - (void)requestFocus;
+- (void)setScrollsToTop:(BOOL)enabled;
 - (void)clearCache:(BOOL)includeDiskFiles;
 #ifdef RCT_NEW_ARCH_ENABLED
 - (void)destroyWebView;
