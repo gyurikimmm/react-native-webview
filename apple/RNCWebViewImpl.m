@@ -823,6 +823,25 @@ RCTAutoInsetsProtocol>
 #endif // !TARGET_OS_OSX
 }
 
+- (void)setScrollEnabled:(BOOL)scrollEnabled
+{
+  _scrollEnabled = scrollEnabled;
+#if !TARGET_OS_OSX
+  _webView.scrollView.scrollEnabled = scrollEnabled;
+#endif // !TARGET_OS_OSX
+}
+
+
+- (void)setScrollsToTop:(BOOL)scrollsToTop
+{
+  _scrollsToTop = scrollsToTop;
+  _webView.scrollView.scrollsToTop = scrollsToTop;
+#if !TARGET_OS_OSX
+  if (_webView != nil) {
+    _webView.scrollView.scrollsToTop = scrollsToTop;
+  }
+#endif // !TARGET_OS_OSX
+}
 
 - (void)visitSource
 {
