@@ -1047,13 +1047,6 @@ RCTAutoInsetsProtocol>
   _webView.customUserAgent = userAgent;
 }
 
-- (void)setScrollEnabled:(BOOL)scrollEnabled
-{
-  _scrollEnabled = scrollEnabled;
-#if !TARGET_OS_OSX
-  _webView.scrollView.scrollEnabled = scrollEnabled;
-#endif // !TARGET_OS_OSX
-}
 
 #if !TARGET_OS_OSX
 // UIScrollViewDelegate method
