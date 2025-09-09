@@ -179,6 +179,7 @@ export interface NativeProps extends ViewProps {
   // !Android only
 
   // iOS only
+  scrollsToTop?: boolean;
   allowingReadAccessToURL?: string;
   allowsBackForwardNavigationGestures?: boolean;
   allowsInlineMediaPlayback?: boolean;
