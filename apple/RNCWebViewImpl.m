@@ -164,6 +164,7 @@ RCTAutoInsetsProtocol>
 #endif // !TARGET_OS_OSX
     _bounces = YES;
     _scrollEnabled = YES;
+    _scrollsToTop = YES;
     _showsHorizontalScrollIndicator = YES;
     _javaScriptEnabled = YES;
     _allowsLinkPreview = YES;
