@@ -2,6 +2,7 @@
 #ifdef RCT_NEW_ARCH_ENABLED
 #import "RNCWebView.h"
 #import "RNCWebViewImpl.h"
+#import <UIKit/UIKit.h>
 
 #import <react/renderer/components/RNCWebViewSpec/ComponentDescriptors.h>
 #import <react/renderer/components/RNCWebViewSpec/EventEmitters.h>
@@ -39,8 +40,10 @@ auto stringToOnLoadingFinishNavigationTypeEnum(std::string value) {
     return RNCWebViewEventEmitter::OnLoadingFinishNavigationType::Other;
 }
 
-@interface RNCWebView () <RCTRNCWebViewViewProtocol>
-
+@interface RNCWebView () <RCTRNCWebViewViewProtocol, UIScrollViewDelegate>
+// for status-bar tap handling and delegate chaining
+@property (nonatomic, weak) UIScrollView *rn_scrollView;
+@property (nonatomic, weak) id<UIScrollViewDelegate> rn_originalScrollDelegate;
 @end
 
 @implementation RNCWebView {
@@ -244,6 +247,10 @@ auto stringToOnLoadingFinishNavigationTypeEnum(std::string value) {
                 webViewEventEmitter->onHttpError(data);
             }
         };
+
+        // attach scroll delegate & make sure status-bar tap targets this webview
+        [self rn_tryAttachScrollDelegateAndConfigure];
+
         self.contentView = _view;
     }
     return self;
@@ -486,6 +493,11 @@ auto stringToOnLoadingFinishNavigationTypeEnum(std::string value) {
     }
     [_view setSource:source];
     
+    // Keep native UIScrollView in sync with the prop & enforce exclusivity for status-bar tap.
+    if (oldViewProps.scrollsToTop != newViewProps.scrollsToTop) {
+        [self rn_setScrollsToTopOnAttachedScrollView:newViewProps.scrollsToTop];
+    }
+
     [super updateProps:props oldProps:oldProps];
 }
 
@@ -541,6 +553,120 @@ Class<RCTComponentViewProtocol> RNCWebViewCls(void)
 
 - (void)clearHistory {
     // android only
+}
+
+#pragma mark - Status-bar tap support (scroll-to-top across web content)
+
+- (void)didMoveToWindow {
+  [super didMoveToWindow];
+  [self rn_tryAttachScrollDelegateAndConfigure];
+  if (self.window) {
+    [self rn_ensureExclusiveScrollsToTop];
+  }
+}
+
+- (void)dealloc {
+  if (self.rn_scrollView) {
+    self.rn_scrollView.delegate = self.rn_originalScrollDelegate;
+  }
+}
+
+- (void)rn_tryAttachScrollDelegateAndConfigure {
+  if (!self.rn_scrollView) {
+    UIScrollView *sv = [self rn_findFirstScrollViewInView:_view];
+    if (sv) {
+      self.rn_originalScrollDelegate = sv.delegate;
+      sv.delegate = self;
+      self.rn_scrollView = sv;
+    }
+  }
+  // default to YES locally; updateProps will sync with prop when it changes
+  if (self.rn_scrollView) {
+    self.rn_scrollView.scrollsToTop = YES;
+  }
+}
+
+- (UIScrollView *)rn_findFirstScrollViewInView:(UIView *)v {
+  if (!v) return nil;
+  if ([v isKindOfClass:[UIScrollView class]]) {
+    return (UIScrollView *)v;
+  }
+  for (UIView *sub in v.subviews) {
+    UIScrollView *found = [self rn_findFirstScrollViewInView:sub];
+    if (found) return found;
+  }
+  return nil;
+}
+
+- (void)rn_setScrollsToTopOnAttachedScrollView:(BOOL)enabled {
+  [self rn_tryAttachScrollDelegateAndConfigure];
+  if (self.rn_scrollView) {
+    self.rn_scrollView.scrollsToTop = enabled;
+    if (enabled) {
+      [self rn_ensureExclusiveScrollsToTop];
+    }
+  }
+}
+
+- (void)rn_ensureExclusiveScrollsToTop {
+  UIWindow *win = self.window ?: UIApplication.sharedApplication.keyWindow;
+  if (!win || !self.rn_scrollView) return;
+  [self rn_disableScrollsToTopEverywhereExcept:self.rn_scrollView inView:win];
+}
+
+- (void)rn_disableScrollsToTopEverywhereExcept:(UIScrollView *)target inView:(UIView *)v {
+  if (!v) return;
+  if ([v isKindOfClass:[UIScrollView class]]) {
+    UIScrollView *sv = (UIScrollView *)v;
+    sv.scrollsToTop = (sv == target);
+  }
+  for (UIView *sub in v.subviews) {
+    [self rn_disableScrollsToTopEverywhereExcept:target inView:sub];
+  }
+}
+
+#pragma mark - UIScrollViewDelegate (intercept status-bar tap)
+
+- (BOOL)scrollViewShouldScrollToTop:(UIScrollView *)scrollView {
+  if (scrollView == self.rn_scrollView) {
+    // Smoothly scroll window and all overflow containers to top inside the web content
+    NSString *js =
+    @"(function(){try{"
+      "window.scrollTo({top:0,behavior:'smooth'});"
+      "var nodes=[].slice.call(document.querySelectorAll('*'));"
+      "for(var i=0;i<nodes.length;i++){"
+        "var s=getComputedStyle(nodes[i]);"
+        "if(/(auto|scroll)/.test(s.overflowY) && nodes[i].scrollHeight>nodes[i].clientHeight+1){"
+          "nodes[i].scrollTo({top:0,behavior:'smooth'});"
+        "}"
+      "}"
+    "}catch(e){}})();";
+    [_view injectJavaScript:js];
+
+    // Return NO to avoid the native instant jump (we already did smooth JS scroll).
+    // Change to YES if you want native instant jump as well.
+    return NO;
+  }
+  if ([self.rn_originalScrollDelegate respondsToSelector:@selector(scrollViewShouldScrollToTop:)]) {
+    return [self.rn_originalScrollDelegate scrollViewShouldScrollToTop:scrollView];
+  }
+  return YES;
+}
+
+- (void)scrollViewDidScroll:(UIScrollView *)scrollView {
+  if ([self.rn_originalScrollDelegate respondsToSelector:@selector(scrollViewDidScroll:)]) {
+    [self.rn_originalScrollDelegate scrollViewDidScroll:scrollView];
+  }
+}
+- (void)scrollViewWillBeginDragging:(UIScrollView *)scrollView {
+  if ([self.rn_originalScrollDelegate respondsToSelector:@selector(scrollViewWillBeginDragging:)]) {
+    [self.rn_originalScrollDelegate scrollViewWillBeginDragging:scrollView];
+  }
+}
+- (void)scrollViewDidEndDragging:(UIScrollView *)scrollView willDecelerate:(BOOL)decelerate {
+  if ([self.rn_originalScrollDelegate respondsToSelector:@selector(scrollViewDidEndDragging:willDecelerate:)]) {
+    [self.rn_originalScrollDelegate scrollViewDidEndDragging:scrollView willDecelerate:decelerate];
+  }
 }
 
 @end
