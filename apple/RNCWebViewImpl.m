@@ -835,7 +835,6 @@ RCTAutoInsetsProtocol>
 - (void)setScrollsToTop:(BOOL)scrollsToTop
 {
   _scrollsToTop = scrollsToTop;
-  _webView.scrollView.scrollsToTop = scrollsToTop;
 #if !TARGET_OS_OSX
   if (_webView != nil) {
     _webView.scrollView.scrollsToTop = scrollsToTop;
