@@ -270,6 +270,7 @@ auto stringToOnLoadingFinishNavigationTypeEnum(std::string value) {
     }
 
     REMAP_WEBVIEW_PROP(scrollEnabled)
+    REMAP_WEBVIEW_PROP(scrollsToTop) 
     REMAP_WEBVIEW_STRING_PROP(injectedJavaScript)
     REMAP_WEBVIEW_STRING_PROP(injectedJavaScriptBeforeContentLoaded)
     REMAP_WEBVIEW_PROP(injectedJavaScriptForMainFrameOnly)
