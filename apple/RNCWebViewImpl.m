@@ -121,7 +121,7 @@ UIGestureRecognizerDelegate,
 #endif // !TARGET_OS_OSX
 RCTAutoInsetsProtocol>
 
-@property (nonatomic, copy) RNCWKWebView *webView;
+@property (nonatomic, strong) RNCWKWebView *webView;
 @property (nonatomic, strong) WKUserScript *postMessageScript;
 @property (nonatomic, strong) WKUserScript *injectedObjectJsonScript;
 @property (nonatomic, strong) WKUserScript *atStartScript;
