@@ -1150,17 +1150,28 @@ RCTAutoInsetsProtocol>
   _webView.scrollView.scrollsToTop = scrollsToTop;
 }
 
-- (BOOL)scrollViewShouldScrollToTop:(UIScrollView *)scrollView {
-  NSString *js =
+- (BOOL)scrollViewShouldScrollToTop:(UIScrollView *)scrollView
+{
+
+  if (scrollView != _webView.scrollView) {
+    return NO;
+  }
+
+
+  static NSString *const js =
   @"(function(){"
-    "var ev=new Event('STATUS_BAR_TAP');"
-    "window.dispatchEvent(ev);"
-    "var el=document.scrollingElement||document.documentElement||document.body;"
-    "var candidates=Array.from(document.querySelectorAll('[data-scroll-container], .scroll-container, [style*=\"overflow: auto\"], [style*=\"overflow: scroll\"]'));"
-    "var target=candidates.reduce(function(best,cur){return (!best||cur.scrollHeight>best.scrollHeight)?cur:best;}, null)||el;"
-    "try{target.scrollTo({top:0,behavior:'smooth'});}catch(e){try{target.scrollTop=0;}catch(_){} }"
+    "try{"
+      "window.dispatchEvent(new Event('STATUS_BAR_TAP'));"
+      "var doc=document;"
+      "var root=doc.scrollingElement||doc.documentElement||doc.body;"
+      "var list=[].slice.call(doc.querySelectorAll('[data-scroll-container], .scroll-container, [style*=\"overflow: auto\"], [style*=\"overflow: scroll\"]'));"
+      "var target=list.reduce(function(best,cur){return (!best||cur.scrollHeight>best.scrollHeight)?cur:best;}, null)||root;"
+      "if(target.scrollTo){target.scrollTo({top:0,behavior:'smooth'});}else{target.scrollTop=0;}"
+    "}catch(e){}"
   "})();";
+
   [_webView evaluateJavaScript:js completionHandler:nil];
+
 
   return NO;
 }
