@@ -1149,13 +1149,12 @@ RCTAutoInsetsProtocol>
   _webView.scrollView.scrollsToTop = scrollsToTop;
 }
 
+#if !TARGET_OS_OSX
 - (BOOL)scrollViewShouldScrollToTop:(UIScrollView *)scrollView
 {
-
   if (scrollView != _webView.scrollView) {
     return NO;
   }
-
 
   static NSString *const js =
   @"(function(){"
@@ -1170,11 +1169,9 @@ RCTAutoInsetsProtocol>
   "})();";
 
   [_webView evaluateJavaScript:js completionHandler:nil];
-
-
-  return NO;
+  return NO; 
 }
-
+#endif
 
 - (void)                    webView:(WKWebView *)webView
   didReceiveAuthenticationChallenge:(NSURLAuthenticationChallenge *)challenge
