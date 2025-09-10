@@ -523,6 +523,7 @@ RCTAutoInsetsProtocol>
     _webView.menuItems = _menuItems;
     _webView.suppressMenuItems = _suppressMenuItems;
     _webView.scrollView.delegate = self;
+    _webView.scrollView.scrollsToTop = YES;       
     _webView.scrollView.scrollsToTop = _scrollsToTop;
 #endif // !TARGET_OS_OSX
     _webView.UIDelegate = self;
