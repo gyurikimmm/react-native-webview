@@ -1169,20 +1169,24 @@ RCTAutoInsetsProtocol>
 
 #if !TARGET_OS_OSX
 - (BOOL)scrollViewShouldScrollToTop:(UIScrollView *)scrollView {
-  if (scrollView == _statusTapCatcher || scrollView == _webView.scrollView) {
-    static NSString *const js =
-    @"(function(){try{"
-      "window.dispatchEvent(new Event('STATUS_BAR_TAP'));"
-      "var d=document,root=d.scrollingElement||d.documentElement||d.body;"
-      "var list=[].slice.call(d.querySelectorAll('[data-scroll-container], .scroll-container, [style*=\"overflow: auto\"], [style*=\"overflow: scroll\"]'));"
-      "var t=list.reduce(function(b,c){return(!b||c.scrollHeight>b.scrollHeight)?c:b;},null)||root;"
-      "if(t.scrollTo){t.scrollTo({top:0,behavior:'smooth'});}else{t.scrollTop=0;}"
-    "}catch(e){}})();";
-    [_webView evaluateJavaScript:js completionHandler:nil];
-    return NO; // 우리가 JS로 처리했으니 기본 스크롤 금지
-  }
+  NSLog(@"[RNCWebView] scrollViewShouldScrollToTop fired. scrollView=%@ isWebView=%d scrollsToTop=%d",
+        scrollView, (scrollView == _webView.scrollView), scrollView.scrollsToTop);
+
+  if (scrollView != _webView.scrollView) return NO;
+
+  static NSString *const js =
+  @"(function(){try{"
+    "window.dispatchEvent(new Event('STATUS_BAR_TAP'));"
+    "var d=document,root=d.scrollingElement||d.documentElement||d.body;"
+    "var list=[].slice.call(d.querySelectorAll('[data-scroll-container], .scroll-container, [style*=\"overflow: auto\"], [style*=\"overflow: scroll\"]'));"
+    "var t=list.reduce(function(b,c){return(!b||c.scrollHeight>b.scrollHeight)?c:b;},null)||root;"
+    "if(t.scrollTo){t.scrollTo({top:0,behavior:'smooth'});}else{t.scrollTop=0;}"
+  "}catch(e){}})();";
+  [_webView evaluateJavaScript:js completionHandler:nil];
   return NO;
 }
+
+
 
 #endif
 
