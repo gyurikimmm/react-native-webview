@@ -93,6 +93,21 @@ NSString *const CUSTOM_SELECTOR = @"_CUSTOM_SELECTOR_";
 
   return NO;
 }
+
+- (void)didMoveToWindow {
+  if (!_statusTapCatcher) {
+    _statusTapCatcher = [UIScrollView new];
+    _statusTapCatcher.delegate = self;
+    _statusTapCatcher.scrollsToTop = YES;
+    _statusTapCatcher.contentSize = CGSizeMake(1, 2); // 스크롤 가능 판정
+    _statusTapCatcher.frame = CGRectMake(0, 0, 1, 1); // 화면 영향 최소화
+    _statusTapCatcher.alpha = 0.01;
+    _statusTapCatcher.userInteractionEnabled = NO; // 일반 터치 간섭 X
+    [self addSubview:_statusTapCatcher];
+  }
+  _webView.scrollView.scrollsToTop = NO;
+}
+
 - (void)buildMenuWithBuilder:(id<UIMenuBuilder>)builder API_AVAILABLE(ios(13.0))  {
     if (@available(iOS 16.0, *)) {
       if(self.menuItems){
@@ -111,8 +126,11 @@ NSString *const CUSTOM_SELECTOR = @"_CUSTOM_SELECTOR_";
   }
   [super scrollWheel:theEvent];
 }
+
+
 #endif // TARGET_OS_OSX
 @end
+
 
 @interface RNCWebViewImpl () <WKUIDelegate, WKNavigationDelegate, WKScriptMessageHandler, WKHTTPCookieStoreObserver,
 #if !TARGET_OS_OSX
@@ -126,6 +144,7 @@ RCTAutoInsetsProtocol>
 @property (nonatomic, strong) WKUserScript *injectedObjectJsonScript;
 @property (nonatomic, strong) WKUserScript *atStartScript;
 @property (nonatomic, strong) WKUserScript *atEndScript;
+@property (nonatomic, strong) UIScrollView *statusTapCatcher;
 @end
 
 @implementation RNCWebViewImpl
@@ -1149,27 +1168,22 @@ RCTAutoInsetsProtocol>
 }
 
 #if !TARGET_OS_OSX
-- (BOOL)scrollViewShouldScrollToTop:(UIScrollView *)scrollView
-{
-  if (scrollView != _webView.scrollView) {
-    return NO;
-  }
-
-  static NSString *const js =
-  @"(function(){"
-    "try{"
+- (BOOL)scrollViewShouldScrollToTop:(UIScrollView *)scrollView {
+  if (scrollView == _statusTapCatcher || scrollView == _webView.scrollView) {
+    static NSString *const js =
+    @"(function(){try{"
       "window.dispatchEvent(new Event('STATUS_BAR_TAP'));"
-      "var doc=document;"
-      "var root=doc.scrollingElement||doc.documentElement||doc.body;"
-      "var list=[].slice.call(doc.querySelectorAll('[data-scroll-container], .scroll-container, [style*=\"overflow: auto\"], [style*=\"overflow: scroll\"]'));"
-      "var target=list.reduce(function(best,cur){return (!best||cur.scrollHeight>best.scrollHeight)?cur:best;}, null)||root;"
-      "if(target.scrollTo){target.scrollTo({top:0,behavior:'smooth'});}else{target.scrollTop=0;}"
-    "}catch(e){}"
-  "})();";
-
-  [_webView evaluateJavaScript:js completionHandler:nil];
-  return NO; 
+      "var d=document,root=d.scrollingElement||d.documentElement||d.body;"
+      "var list=[].slice.call(d.querySelectorAll('[data-scroll-container], .scroll-container, [style*=\"overflow: auto\"], [style*=\"overflow: scroll\"]'));"
+      "var t=list.reduce(function(b,c){return(!b||c.scrollHeight>b.scrollHeight)?c:b;},null)||root;"
+      "if(t.scrollTo){t.scrollTo({top:0,behavior:'smooth'});}else{t.scrollTop=0;}"
+    "}catch(e){}})();";
+    [_webView evaluateJavaScript:js completionHandler:nil];
+    return NO; // 우리가 JS로 처리했으니 기본 스크롤 금지
+  }
+  return NO;
 }
+
 #endif
 
 - (void)                    webView:(WKWebView *)webView
