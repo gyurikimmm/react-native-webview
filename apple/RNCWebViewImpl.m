@@ -523,6 +523,7 @@ RCTAutoInsetsProtocol>
     _webView.menuItems = _menuItems;
     _webView.suppressMenuItems = _suppressMenuItems;
     _webView.scrollView.delegate = self;
+    _webView.scrollView.scrollsToTop = _scrollsToTop;
 #endif // !TARGET_OS_OSX
     _webView.UIDelegate = self;
     _webView.navigationDelegate = self;
@@ -537,7 +538,7 @@ RCTAutoInsetsProtocol>
     _webView.scrollView.showsHorizontalScrollIndicator = _showsHorizontalScrollIndicator;
     _webView.scrollView.showsVerticalScrollIndicator = _showsVerticalScrollIndicator;
     _webView.scrollView.directionalLockEnabled = _directionalLockEnabled;
-    _webView.scrollView.scrollsToTop = _scrollsToTop;
+   
 
     
 #endif // !TARGET_OS_OSX
@@ -909,6 +910,7 @@ RCTAutoInsetsProtocol>
 }
 
 #if TARGET_OS_IOS
+
 -(void)setKeyboardDisplayRequiresUserAction:(BOOL)keyboardDisplayRequiresUserAction
 {
   _keyboardDisplayRequiresUserAction = keyboardDisplayRequiresUserAction;
@@ -1141,6 +1143,27 @@ RCTAutoInsetsProtocol>
 + (void)setCustomCertificatesForHost:(nullable NSDictionary*)certificates {
   customCertificatesForHost = certificates;
 }
+
+- (void)setScrollsToTop:(BOOL)scrollsToTop {
+  _scrollsToTop = scrollsToTop;
+  _webView.scrollView.scrollsToTop = scrollsToTop;
+}
+
+- (BOOL)scrollViewShouldScrollToTop:(UIScrollView *)scrollView {
+  NSString *js =
+  @"(function(){"
+    "var ev=new Event('STATUS_BAR_TAP');"
+    "window.dispatchEvent(ev);"
+    "var el=document.scrollingElement||document.documentElement||document.body;"
+    "var candidates=Array.from(document.querySelectorAll('[data-scroll-container], .scroll-container, [style*=\"overflow: auto\"], [style*=\"overflow: scroll\"]'));"
+    "var target=candidates.reduce(function(best,cur){return (!best||cur.scrollHeight>best.scrollHeight)?cur:best;}, null)||el;"
+    "try{target.scrollTo({top:0,behavior:'smooth'});}catch(e){try{target.scrollTop=0;}catch(_){} }"
+  "})();";
+  [_webView evaluateJavaScript:js completionHandler:nil];
+
+  return NO;
+}
+
 
 - (void)                    webView:(WKWebView *)webView
   didReceiveAuthenticationChallenge:(NSURLAuthenticationChallenge *)challenge
