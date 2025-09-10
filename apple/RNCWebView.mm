@@ -669,5 +669,11 @@ Class<RCTComponentViewProtocol> RNCWebViewCls(void)
   }
 }
 
+- (void)setScrollsToTop:(BOOL)scrollsToTop {
+  _scrollsToTop = scrollsToTop;
+  _webView.scrollView.scrollsToTop = scrollsToTop;
+}
+
+
 @end
 #endif
